@@ -1,7 +1,15 @@
+# xcode-frameworks
 
-# Xcode Framework Manager
+A command-line tool built on top of [XcodeProj](https://github.com/tuist/XcodeProj) for managing frameworks and xcframeworks in an Xcode project. This tool helps you automate the process of embedding, signing, and managing frameworks, including detecting duplicates and fixing them.
 
-A command-line tool for managing frameworks and xcframeworks in an Xcode project. This tool helps you automate the process of embedding, signing, and managing frameworks, including detecting duplicates and fixing them.
+## Motivation
+
+We often work on projects that share frameworks with common dependencies, which need to be integrated manually for various reasons. Due to this, dependencies can sometimes be duplicated, resulting in duplicated symbols and compilation errors. Additionally, some third-party vendor frameworks need to be set to embed and sign, which can lead to crashes if not configured correctly.
+
+This tool was created to automate these tasks and eliminate the need for manual configuration in Xcode.
+
+> [!NOTE]  
+> This is a work in progress (WIP). Contributions are welcome!
 
 https://github.com/user-attachments/assets/54fcabaf-1712-4577-a21f-1a2e511a4044
 
@@ -15,7 +23,6 @@ https://github.com/user-attachments/assets/54fcabaf-1712-4577-a21f-1a2e511a4044
   - [fix](#fix)
   - [embed](#embed)
   - [embed-sign](#embed-sign)
-- [Examples](#examples)
 - [License](#license)
 
 ## Installation
@@ -65,7 +72,7 @@ xcode-frameworks <subcommand> [options]
 **Usage**:
 
 ```bash
-xcode-frameworks list
+xcode-frameworks list <your-project-path>
 ```
 
 ### duplicates
@@ -75,7 +82,7 @@ xcode-frameworks list
 **Usage**:
 
 ```bash
-xcode-frameworks duplicates
+xcode-frameworks duplicates <your-project-path>
 ```
 
 ### fix
@@ -85,7 +92,7 @@ xcode-frameworks duplicates
 **Usage**:
 
 ```bash
-xcode-frameworks fix
+xcode-frameworks fix <your-project-path>
 ```
 
 ### embed
@@ -95,7 +102,7 @@ xcode-frameworks fix
 **Usage**:
 
 ```bash
-xcode-frameworks embed <frameworks>...
+xcode-frameworks embed <your-project-path> --frameworks <yours frameworks>...
 ```
 
 This subcommand allows you to embed frameworks into your Xcode project without signing them.
@@ -107,42 +114,10 @@ This subcommand allows you to embed frameworks into your Xcode project without s
 **Usage**:
 
 ```bash
-xcode-frameworks embed-sign <frameworks>...
+xcode-frameworks embed-sign <your-project-path> --frameworks <frameworks>...
 ```
 
 This subcommand allows you to embed frameworks into your Xcode project and sign them.
-
-## Examples
-
-- **Listing embedded frameworks**:
-
-  ```bash
-  xcode-frameworks list
-  ```
-
-- **Finding duplicate frameworks**:
-
-  ```bash
-  xcode-frameworks duplicates
-  ```
-
-- **Fixing duplicate frameworks**:
-
-  ```bash
-  xcode-frameworks fix
-  ```
-
-- **Embedding a framework without signing**:
-
-  ```bash
-  xcode-frameworks embed MyFramework
-  ```
-
-- **Embedding and signing a framework**:
-
-  ```bash
-  xcode-frameworks embed-sign MyFramework
-  ```
 
 ## License
 
