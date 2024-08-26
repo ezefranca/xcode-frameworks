@@ -12,7 +12,6 @@ struct FixCommand: ParsableCommand {
     )
 
     // MARK: - Arguments and Flags
-
     @Flag(help: "Show detailed information for debugging.")
     var verbose: Bool = false
 
@@ -23,13 +22,13 @@ struct FixCommand: ParsableCommand {
     var strategy: String = "keep-first"
 
     // MARK: - Main Function
-
     func run() throws {
         let projectFilePath = Path(projectPath)
 
         // Verbose logging
         if verbose {
             print("📂 Project Path: \(projectFilePath)".cyan)
+            print("🔍 Attempting to load the Xcode project...".yellow)
         }
 
         // Load the Xcode project
@@ -40,21 +39,26 @@ struct FixCommand: ParsableCommand {
             print("✅ Successfully loaded Xcode project.".green)
         }
 
-        // Identify duplicated frameworks
+        // Identify duplicated frameworks across all targets 
         var frameworkOccurrences: [String: [PBXBuildFile]] = [:]
 
-        // Iterate through all native targets to gather framework references
         for target in xcodeproj.pbxproj.nativeTargets {
+            if verbose {
+                print("🚀 Processing target: \(target.name)".lightYellow)
+            }
+
             if let frameworksBuildPhase = try target.frameworksBuildPhase() {
                 for buildFile in frameworksBuildPhase.files ?? [] {
-                    if let frameworkName = buildFile.file?.path {
+                    // Extract the framework name by ignoring the path
+                    if let fileRef = buildFile.file as? PBXFileReference,
+                       let frameworkName = fileRef.name ?? fileRef.path?.components(separatedBy: "/").last {
                         frameworkOccurrences[frameworkName, default: []].append(buildFile)
                     }
                 }
             }
         }
 
-        // Filter out duplicates
+        // Filter out duplicates across all targets
         let duplicatedFrameworks = frameworkOccurrences.filter { $0.value.count > 1 }
 
         if duplicatedFrameworks.isEmpty {
@@ -63,7 +67,7 @@ struct FixCommand: ParsableCommand {
             if verbose {
                 print("🔍 Duplicates detected. Applying the '\(strategy)' strategy...".yellow)
             }
-            
+
             // Prepare the table to display the frameworks being fixed
             var table = TextTable(columns: [
                 TextTableColumn(header: "Framework"),
@@ -106,13 +110,13 @@ struct FixCommand: ParsableCommand {
                     print("✅ Fixed duplicates for \(frameworkName). Kept \(strategy == "keep-first" ? "first" : "last") instance.".green)
                 }
             }
-            
+
             do {
                 try xcodeproj.write(path: projectFilePath)
                 print("💾 Project saved with duplicates removed.".blue)
                 print(table.render())
             } catch {
-                print("❌ \(error.localizedDescription)")
+                print("❌ \(error.localizedDescription)".red)
             }
         }
     }
