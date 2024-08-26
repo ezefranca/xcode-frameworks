@@ -1,0 +1,44 @@
+name: Swift Build and Release
+
+on:
+  push:
+    branches: [ "main" ]
+  pull_request:
+    branches: [ "main" ]
+
+jobs:
+  build:
+
+    runs-on: macos-latest
+
+    steps:
+    - uses: actions/checkout@v4
+    
+    - name: Install Dependencies
+      run: swift package resolve
+
+    - name: Build
+      run: swift build -v
+
+  release:
+
+    runs-on: macos-latest
+    needs: build
+
+    steps:
+    - uses: actions/checkout@v4
+
+    - name: Install Dependencies
+      run: swift package resolve
+
+    - name: Build Release Binary
+      run: swift build -c release -v
+
+    - name: Archive Release
+      run: tar -czvf xcode-frameworks.tar.gz -C .build/release xcode-frameworks
+
+    - name: Upload Release Artifact
+      uses: actions/upload-artifact@v2
+      with:
+        name: xcode-frameworks
+        path: xcode-frameworks.tar.gz
