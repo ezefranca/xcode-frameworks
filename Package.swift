@@ -4,7 +4,7 @@
 import PackageDescription
 
 let package = Package(
-    name: "embeddedframeworks",
+    name: "xcode-frameworks",
     platforms: [
         .macOS(.v11)
     ],
@@ -16,7 +16,7 @@ let package = Package(
     ],
     targets: [
         .executableTarget(
-            name: "embeddedframeworks",
+            name: "xcode-frameworks",
             dependencies: [
                 "Rainbow",
                 "SwiftyTextTable",
