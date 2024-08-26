@@ -40,7 +40,7 @@ struct FixCommand: ParsableCommand {
             print("✅ Successfully loaded Xcode project.".green)
         }
 
-        // Step 1: Identify duplicated frameworks
+        // Identify duplicated frameworks
         var frameworkOccurrences: [String: [PBXBuildFile]] = [:]
 
         // Iterate through all native targets to gather framework references
@@ -54,7 +54,7 @@ struct FixCommand: ParsableCommand {
             }
         }
 
-        // Step 2: Filter out duplicates
+        // Filter out duplicates
         let duplicatedFrameworks = frameworkOccurrences.filter { $0.value.count > 1 }
 
         if duplicatedFrameworks.isEmpty {
@@ -70,7 +70,6 @@ struct FixCommand: ParsableCommand {
                 TextTableColumn(header: "Duplications")
             ])
 
-            // Step 3: Apply the fixing strategy
             for (frameworkName, buildFiles) in duplicatedFrameworks {
                 // Add to the result table
                 table.addRow(values: [frameworkName, "\(buildFiles.count)"])
