@@ -9,7 +9,7 @@ struct ListCommand: ParsableCommand {
     
     static var configuration = CommandConfiguration(
         commandName: "list",
-        abstract: "📋 List all embedded frameworks and xcframeworks in the project."
+        abstract: "📋 List all embedded frameworks and xcframeworks in the Xcode project."
     )
 
     @Flag(help: "Show detailed information for debugging.")
