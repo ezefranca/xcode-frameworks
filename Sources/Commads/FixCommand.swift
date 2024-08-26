@@ -8,7 +8,7 @@ import Rainbow
 struct FixCommand: ParsableCommand {
     static var configuration = CommandConfiguration(
         commandName: "fix",
-        abstract: "🔧 Fix duplicated frameworks in the Xcode project by keeping only one instance based on the provided strategy."
+        abstract: "🔧 Fix duplicated frameworks in the Xcode project by keeping only one instance."
     )
 
     // MARK: - Arguments and Flags

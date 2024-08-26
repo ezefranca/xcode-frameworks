@@ -1,83 +1,112 @@
-//import Foundation
-//import PathKit
-//import XcodeProj
-//import ArgumentParser
-//
-//struct SignCommand: ParsableCommand {
-//    static var configuration = CommandConfiguration(
-//        commandName: "sign",
-//        abstract: "Sign and embed the specified frameworks in the Xcode project"
-//    )
-//
-//    @Argument(help: "The path to the Xcode project.")
-//    var projectPath: String
-//
-//    @Argument(help: "The names of the frameworks to embed and sign.")
-//    var frameworkNames: [String]
-//
-//    func run() throws {
-//        // 1. Load the Xcode project
-//        let projectFilePath = Path(projectPath)
-//        let xcodeproj = try XcodeProj(path: projectFilePath)
-//
-//        // 2. Get the main application target (the one that produces an app)
-//        guard let mainTarget = xcodeproj.pbxproj.targets.first(where: { $0.productType == .application }) as? PBXNativeTarget else {
-//            throw ValidationError("No main application target found in the project.")
-//        }
-//
-//        // 3. Get the Frameworks build phase (or create one if it doesn't exist)
-//        let frameworksBuildPhase = mainTarget.frameworksBuildPhase() ?? PBXFrameworksBuildPhase()
-//
-//        if mainTarget.buildPhases.contains(where: { $0 == frameworksBuildPhase }) == false {
-//            mainTarget.buildPhases.append(frameworksBuildPhase)
-//        }
-//
-//        // 4. Get the Embed Frameworks phase (or create one if it doesn't exist)
-//        let embedFrameworksPhase = mainTarget.embedFrameworksBuildPhase() ?? PBXCopyFilesBuildPhase(dstPath: "", dstSubfolderSpec: .frameworks)
-//
-//        if mainTarget.buildPhases.contains(where: { $0 == embedFrameworksPhase }) == false {
-//            mainTarget.buildPhases.append(embedFrameworksPhase)
-//        }
-//
-//        // 5. Process each framework
-//        for frameworkName in frameworkNames {
-//            // Framework reference
-//            let frameworkFilePath = "Frameworks/\(frameworkName).xcframework"
-//            let frameworkFileReference = PBXFileReference(sourceTree: .group, lastKnownFileType: "wrapper.xcframework", path: frameworkFilePath)
-//
-//            // Check if framework already exists in the Frameworks build phase
-//            let frameworkExists = frameworksBuildPhase.files?.contains(where: { $0.file?.path == frameworkFilePath }) ?? false
-//
-//            if frameworkExists {
-//                print("Framework \(frameworkName) already exists in the project, updating signing settings.")
-//                // Update settings for existing framework
-//                frameworksBuildPhase.files?.forEach { buildFile in
-//                    if buildFile.file?.path == frameworkFilePath {
-//                        buildFile.settings?["ATTRIBUTES"] = ["CodeSignOnCopy", "RemoveHeadersOnCopy"]
-//                    }
-//                }
-//            } else {
-//                print("Adding framework \(frameworkName) to the project.")
-//                // Create new build file for the framework
-//                let buildFile = PBXBuildFile(file: frameworkFileReference)
-//                frameworksBuildPhase.files?.append(buildFile)
-//
-//                // Add the framework to the Embed Frameworks phase
-//                embedFrameworksPhase.files?.append(buildFile)
-//
-//                // Set the embedding and signing attributes
-//                buildFile.settings = ["ATTRIBUTES": ["CodeSignOnCopy", "RemoveHeadersOnCopy"]]
-//
-//                // Add the framework reference to the project (if needed)
-//                if let mainGroup = xcodeproj.pbxproj.mainGroup {
-//                    mainGroup.children.append(frameworkFileReference)
-//                }
-//            }
-//        }
-//
-//        // 6. Save changes
-//        try xcodeproj.write(path: projectFilePath)
-//        print("Successfully embedded and signed the frameworks.")
-//    }
-//}
+import Foundation
+import PathKit
+import XcodeProj
+import ArgumentParser
+import SwiftyTextTable
+import Rainbow
+
+struct SignCommand: ParsableCommand {
+    static var configuration = CommandConfiguration(
+        commandName: "sign",
+        abstract: "🔒 Update the embedding status of specified frameworks in the Xcode project."
+    )
+
+    @Argument(help: "The path to the Xcode project.")
+    var projectPath: String
+
+    @Option(name: .shortAndLong, parsing: .upToNextOption, help: "Specify the frameworks to Embed & Sign.")
+    var sign: [String] = []
+
+    @Flag(help: "Show detailed information for debugging.")
+    var verbose: Bool = false
+
+    func run() throws {
+        let projectFilePath = Path(projectPath)
+        
+        // Check if the project path is valid
+        guard projectFilePath.exists && projectFilePath.extension == "xcodeproj" else {
+            throw ValidationError("❌ The specified path is not a valid .xcodeproj file.".red)
+        }
+
+        // Load the Xcode project
+        if verbose { print("📂 Project Path: \(projectFilePath)".cyan) }
+        let xcodeproj = try XcodeProj(path: projectFilePath)
+        
+        if verbose { print("✅ Successfully loaded Xcode project.".green) }
+
+        let pbxproj = xcodeproj.pbxproj
+        var updatedFrameworks: [String] = []
+        
+        // Process frameworks and update their embedding status to 'Embed & Sign'
+        for frameworkName in sign {
+            if verbose { print("🔍 Searching for framework: \(frameworkName)".lightBlue) }
+
+            var foundFramework = false
+
+            for target in pbxproj.nativeTargets {
+                if let frameworksBuildPhase = try? target.frameworksBuildPhase() {
+                    for buildFile in frameworksBuildPhase.files ?? [] {
+                        if let fileName = buildFile.file?.path, fileName.contains(frameworkName) {
+                            if verbose { print("✅ Found framework: \(fileName)".green) }
+                            updateEmbeddingStatus(buildFile: buildFile, newStatus: "Embed & Sign")
+                            updatedFrameworks.append(fileName)
+                            foundFramework = true
+                            break
+                        }
+                    }
+                }
+            }
+
+            if !foundFramework {
+                print("⚠️ Warning: Framework \(frameworkName) not found in project.".yellow)
+            }
+        }
+
+        // Save the project after updating
+        try xcodeproj.write(path: projectFilePath)
+        
+        // Display result in a table format
+        if !updatedFrameworks.isEmpty {
+            var table = TextTable(columns: [
+                TextTableColumn(header: "Framework".bold.lightBlue),
+                TextTableColumn(header: "Embedding Status".bold.lightYellow)
+            ])
+
+            for framework in updatedFrameworks {
+                table.addRow(values: [framework.lightBlue, "Embed & Sign".red])
+            }
+
+            print(table.render())
+            print("🔒 Embedding status successfully updated for the specified frameworks.".green)
+        } else {
+            print("🎉 No frameworks were updated.".green)
+        }
+    }
+
+    // Helper function to update the embedding status of a framework
+    func updateEmbeddingStatus(buildFile: PBXBuildFile, newStatus: String) {
+        // Check if the build file already has an ATTRIBUTES setting
+        if buildFile.settings == nil {
+            buildFile.settings = [:]
+        }
+        
+        // Add or update the 'CodeSignOnCopy' attribute
+        if buildFile.settings?["ATTRIBUTES"] == nil {
+            buildFile.settings?["ATTRIBUTES"] = ["CodeSignOnCopy", "RemoveHeadersOnCopy"]
+        } else {
+            var attributes = buildFile.settings?["ATTRIBUTES"] as? [String] ?? []
+            if !attributes.contains("CodeSignOnCopy") {
+                attributes.append("CodeSignOnCopy")
+            }
+            if !attributes.contains("RemoveHeadersOnCopy") {
+                attributes.append("RemoveHeadersOnCopy")
+            }
+            buildFile.settings?["ATTRIBUTES"] = attributes
+        }
+
+        if verbose {
+            print("🔧 Updated embedding status for \(buildFile.file?.path ?? "Unknown Framework") to '\(newStatus)'.".green)
+        }
+    }
+}
 

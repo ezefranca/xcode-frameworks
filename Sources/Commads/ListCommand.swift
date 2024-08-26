@@ -105,8 +105,6 @@ struct ListCommand: ParsableCommand {
     
     // Display the framework information using SwiftyTextTable
     func displayFrameworkTable(frameworksInfo: [FrameworkInfo]) {
-        
-        
         var table = TextTable(columns: [
             TextTableColumn(header: "Framework Name".cyan),
             TextTableColumn(header: "Type".magenta),
@@ -125,4 +123,3 @@ struct ListCommand: ParsableCommand {
         print(table.render())
     }
 }
-
