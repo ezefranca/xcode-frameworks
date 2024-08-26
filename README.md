@@ -3,6 +3,8 @@
 
 A command-line tool for managing frameworks and xcframeworks in an Xcode project. This tool helps you automate the process of embedding, signing, and managing frameworks, including detecting duplicates and fixing them.
 
+https://github.com/user-attachments/assets/54fcabaf-1712-4577-a21f-1a2e511a4044
+
 ## Table of Contents
 
 - [Installation](#installation)
