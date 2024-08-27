@@ -1,4 +1,5 @@
-# xcode-frameworks
+# xcode-frameworks  
+[![Swift Build and Release](https://github.com/ezefranca/xcode-frameworks/actions/workflows/swift.yml/badge.svg)](https://github.com/ezefranca/xcode-frameworks/actions/workflows/swift.yml)
 
 A command-line tool built on top of [XcodeProj](https://github.com/tuist/XcodeProj) for managing frameworks and xcframeworks in an Xcode project. This tool helps you automate the process of embedding, signing, and managing frameworks, including detecting duplicates and fixing them.
 
